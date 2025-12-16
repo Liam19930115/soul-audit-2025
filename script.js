@@ -348,64 +348,68 @@ function formatMetrics(text) {
     }).join('');
 }
 
-// ========== 最终修复版：强制背景与宽度 ==========
+// ========== 最终修正版：解决图片透明/空白问题 ==========
 async function saveAsImage() {
     const btn = document.getElementById('saveImageBtn');
     const originalText = btn.innerHTML;
     
-    btn.innerHTML = '<i class="ri-loader-4-line"></i> 处理中...';
+    // 1. 按钮变 loading 状态
+    btn.innerHTML = '<i class="ri-loader-4-line"></i> 绘制中...';
     btn.disabled = true;
 
     try {
         const originalContent = document.querySelector('.report-paper');
         if (!originalContent) throw new Error("未找到报告内容");
 
-        // 1. 创建“摄影棚”容器
+        // 2. 创建“摄影棚”容器
         const wrapper = document.createElement('div');
         wrapper.style.position = 'fixed';
-        wrapper.style.top = '0';
+        wrapper.style.top = '0'; // 放在顶部
         wrapper.style.left = '0';
         wrapper.style.width = '480px'; 
-        wrapper.style.zIndex = '-9999';
-        wrapper.style.opacity = '0';
-        // 【关键修改1】给容器一个强制的背景色，防止透明
+        // 【关键修复1】不能设为 opacity: 0，否则截图也是透明的！
+        // 改为 z-index: -9999 (放在最底层)，这样用户看不见，但浏览器能渲染
+        wrapper.style.zIndex = '-9999'; 
+        wrapper.style.opacity = '1'; 
+        // 【关键修复2】给容器强制加上米色背景，防止透明
         wrapper.style.background = '#F3F1E9'; 
         
-        // 2. 克隆报告纸
+        // 3. 克隆报告纸
         const clone = originalContent.cloneNode(true);
-        // 【关键修改2】强制样式，确保不透明且撑满
-        clone.style.background = '#F3F1E9'; 
-        clone.style.width = '100%'; // 撑满容器
-        clone.style.margin = '0';   // 去掉居中边距
-        clone.style.boxShadow = 'none'; // 去掉阴影，边界更干净
+        // 【关键修复3】强制样式：撑满、无阴影、确保文字颜色正确
+        clone.style.width = '100%'; 
+        clone.style.margin = '0';   
+        clone.style.boxShadow = 'none'; 
         clone.style.transform = 'none';
+        clone.style.color = '#2C2C2C'; // 强制指定文字颜色，防止继承丢失
         
         wrapper.appendChild(clone);
         document.body.appendChild(wrapper);
 
+        // 给浏览器一点渲染时间 (100ms)
         await new Promise(r => setTimeout(r, 100));
 
-        // 3. 截图
+        // 4. 截图
         const canvas = await html2canvas(wrapper, {
-            scale: 2,
+            scale: 2, // 高清
             useCORS: true,
             logging: false,
-            // 【关键修改3】这里设为 null，让它使用我们 DOM 元素的背景色
-            backgroundColor: null, 
+            backgroundColor: '#F3F1E9', // 再次确保背景色
             width: 480,
             windowWidth: 480
         });
 
+        // 5. 清理现场
         document.body.removeChild(wrapper);
+        
+        // 6. 生成图片并弹窗
         const imgData = canvas.toDataURL('image/png');
-
-        // 4. 弹窗显示
         const modal = document.createElement('div');
         modal.className = 'image-modal';
         modal.innerHTML = `
             <button class="close-modal" onclick="this.parentElement.remove()">×</button>
-            <img src="${imgData}" alt="Soul Audit Report">
-            <div class="modal-tip">👆 长按图片 -> 存储图像</div>
+            <img src="${imgData}" alt="Soul Audit Report" style="border: 2px solid #fff;">
+            <div class="modal-tip">👆 长按图片保存到相册</div>
         `;
         
         modal.onclick = (e) => {
@@ -416,11 +420,11 @@ async function saveAsImage() {
 
     } catch (err) {
         console.error(err);
-        alert('截图失败：' + (err.message || '未知错误'));
+        alert('截图失败：' + (err.message || '请重试'));
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
-        container.classList.remove('capture-mode');
+        if(container) container.classList.remove('capture-mode');
     }
 }
 
