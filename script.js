@@ -60,7 +60,6 @@ document.getElementById('startBtn').onclick = () => showPage('quiz');
 document.getElementById('nextBtn').onclick = handleNext;
 document.getElementById('prevBtn').onclick = handlePrev;
 document.getElementById('submitBtn').onclick = generateReport; 
-document.getElementById('saveImageBtn').onclick = saveAsImage;
 
 // 输入框相关
 const answerInput = document.getElementById('answerInput');
@@ -346,85 +345,6 @@ function formatMetrics(text) {
             </div>
         `;
     }).join('');
-}
-
-// ========== 最终终极版：智能重试截图 (修复 Insecure 报错) ==========
-async function saveAsImage() {
-    const btn = document.getElementById('saveImageBtn');
-    const originalText = btn.innerHTML;
-    
-    // 1. 按钮变 loading
-    btn.innerHTML = '<i class="ri-loader-4-line"></i> 绘制中...';
-    btn.disabled = true;
-
-    // 定义一个通用的截图函数
-    const capture = async (useCORS, scale) => {
-        const targetElement = document.querySelector('.report-paper');
-        if (!targetElement) throw new Error("未找到报告内容");
-        
-        // 滚回顶部，防止留白
-        window.scrollTo(0, 0);
-        await new Promise(r => setTimeout(r, 100));
-
-        return await html2canvas(targetElement, {
-            scale: scale, 
-            useCORS: useCORS, // 关键参数：是否加载外部资源
-            allowTaint: false,
-            backgroundColor: '#F3F1E9', // 强制背景色
-            logging: false,
-            onclone: (clonedDoc) => {
-                const clonedPaper = clonedDoc.querySelector('.report-paper');
-                if(clonedPaper) {
-                   clonedPaper.style.transform = 'none';
-                   clonedPaper.style.boxShadow = 'none';
-                   clonedPaper.style.margin = '0 auto';
-                }
-            }
-        });
-    };
-
-    try {
-        let canvas;
-        try {
-            // 【尝试 1】高清模式 (尝试加载字体)
-            // scale: 2 (高清), useCORS: true (加载字体)
-            console.log("尝试高清截图...");
-            canvas = await capture(true, 2);
-        } catch (error) {
-            console.warn("高清截图失败，切换至兼容模式", error);
-            // 如果报错 "Insecure" 或其他，立刻自动重试
-            
-            // 【尝试 2】兼容模式 (放弃字体，使用系统默认字体，保证能出图)
-            // scale: 1.5 (降低内存), useCORS: false (断绝跨域干扰)
-            canvas = await capture(false, 1.5);
-        }
-
-        // 3. 生成图片
-        const imgData = canvas.toDataURL('image/png');
-
-        // 4. 弹窗显示
-        const modal = document.createElement('div');
-        modal.className = 'image-modal';
-        modal.innerHTML = `
-            <button class="close-modal" onclick="this.parentElement.remove()">×</button>
-            <img src="${imgData}" alt="Soul Audit Report" style="border: 2px solid #fff;">
-            <div class="modal-tip">👆 长按图片保存到相册</div>
-        `;
-        
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.remove();
-        };
-
-        document.body.appendChild(modal);
-
-    } catch (err) {
-        console.error("最终截图失败:", err);
-        alert('生成图片失败。\n请直接【截屏】保存即可，效果是一样的。');
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        if(container) container.classList.remove('capture-mode');
-    }
 }
 
 init();
