@@ -1,0 +1,392 @@
+// 完整的 40 个问题 (保持不变)
+const questions = [
+    "今年你做了什么以前从未做过的事？",
+    "你去年定的目标今年完成了吗？",
+    "今年身边有没有迎来什么新生命（人类或宠物）？",
+    "今年有没有不得不经历的离别？",
+    "你去了哪些城市/国家？",
+    "明年你想要拥有什么今年缺失的东西？",
+    "今年哪一天（或哪些日子）会铭刻在你的记忆中，为什么？",
+    "今年你最大的成就是什么？",
+    "今年最大的遗憾或'踩坑'经历是什么？",
+    "你还面临了哪些困难？",
+    "今年有没有好好照顾自己的身体？",
+    "你买过的最好的东西是什么？",
+    "谁是你今年的'能量加油站'？（最想感谢的人）",
+    "谁是你必须远离的'能量吸血鬼'？",
+    "你的大部分钱都花哪儿了？",
+    "什么事让你非常、非常、非常兴奋？",
+    "哪首歌是你的年度BGM？",
+    "与去年的这个时候相比，你变得：更快乐还是更悲伤？更瘦还是更胖？更富有还是更贫穷？",
+    "你希望自己多做些什么？",
+    "你希望自己少做些什么？",
+    "你会用什么仪式感来结束这一年？",
+    "今年你恋爱了吗？（或者感情状态有什么变化？）",
+    "有没有人是你去年这个时候不讨厌，但现在讨厌的？",
+    "你最喜欢的节目/影视剧是什么？",
+    "你读过的最好的书是哪本？",
+    "今年你在音乐方面最大的发现是什么？",
+    "你最喜欢的电影是哪部？",
+    "你最喜欢的一顿饭是什么？",
+    "想要且得到了什么？",
+    "想要却没得到什么？",
+    "你生日那天做了什么？",
+    "有哪一件事如果发生了，会让你的这一年变得无比圆满？",
+    "你如何形容今年的个人穿衣风格？",
+    "是什么让你保持理智/清醒？",
+    "你最欣赏哪位博主/名人/公众人物？",
+    "今年发生的哪件社会热点或新闻事件让你感触最深？",
+    "你想念谁？",
+    "你遇到的最好的新朋友是谁？",
+    "今年你学到了什么宝贵的人生一课？",
+    "哪个词或哪话可以总结你的2025？"
+];
+
+// 状态变量
+let currentQIndex = 0;
+let answers = new Array(questions.length).fill('');
+
+// DOM 元素
+const container = document.getElementById('appContainer');
+const pages = {
+    start: document.getElementById('startPage'),
+    quiz: document.getElementById('quizPage'),
+    submit: document.getElementById('submitPage'),
+    result: document.getElementById('resultPage')
+};
+
+// 按钮事件
+document.getElementById('startBtn').onclick = () => showPage('quiz');
+document.getElementById('nextBtn').onclick = handleNext;
+document.getElementById('prevBtn').onclick = handlePrev;
+document.getElementById('submitBtn').onclick = generateReport; 
+document.getElementById('saveImageBtn').onclick = saveAsImage;
+
+// 输入框相关
+const answerInput = document.getElementById('answerInput');
+const progressFill = document.getElementById('progressFill');
+const currentQSpan = document.getElementById('currentQuestion');
+
+// 初始化
+function init() {
+    loadQuestion();
+}
+
+function showPage(pageId) {
+    Object.values(pages).forEach(p => p.classList.remove('active'));
+    pages[pageId].classList.add('active');
+}
+
+function loadQuestion() {
+    document.getElementById('questionText').textContent = questions[currentQIndex];
+    document.getElementById('questionNumber').textContent = (currentQIndex + 1).toString().padStart(2, '0');
+    currentQSpan.textContent = currentQIndex + 1;
+    answerInput.value = answers[currentQIndex] || '';
+    
+    // 更新进度条
+    const pct = ((currentQIndex + 1) / questions.length) * 100;
+    progressFill.style.width = `${pct}%`;
+    
+    // 按钮状态
+    document.getElementById('prevBtn').disabled = currentQIndex === 0;
+    document.getElementById('nextBtn').innerText = currentQIndex === questions.length - 1 ? '完成' : '下一题';
+}
+
+function handleNext() {
+    answers[currentQIndex] = answerInput.value; // 保存答案
+    if (currentQIndex < questions.length - 1) {
+        currentQIndex++;
+        loadQuestion();
+    } else {
+        showPage('submit');
+        // 隐藏提交按钮前的 loading 状态
+        document.querySelector('.loading-ring').style.display = 'none';
+        document.getElementById('loadingTitle').innerText = '完成！';
+        document.getElementById('loadingText').innerText = '点击下方按钮生成报告';
+        document.getElementById('preSubmitActions').style.display = 'block';
+    }
+}
+
+function handlePrev() {
+    if (currentQIndex > 0) {
+        answers[currentQIndex] = answerInput.value;
+        currentQIndex--;
+        loadQuestion();
+    }
+}
+
+// ========== 核心：生成报告 (优化版) ==========
+async function generateReport() {
+    const btn = document.getElementById('submitBtn');
+    const loadingRing = document.querySelector('.loading-ring');
+    const preSubmitActions = document.getElementById('preSubmitActions');
+    
+    // UI 变为加载中
+    preSubmitActions.style.display = 'none';
+    loadingRing.style.display = 'block';
+    document.getElementById('loadingTitle').innerText = '导师正在分析...';
+    document.getElementById('loadingText').innerText = '正在链接你的潜意识数据库';
+
+    // ⚠️ 安全警告：为了演示功能暂时保留，请务必在 DeepSeek 后台重新生成 Key 并在测试后删除
+    // 真正的生产环境请不要把 Key 放在这里！
+    const apiKey = 'sk-1f8a3262abf74e508abc3dc6880face0'; 
+    
+    // 构建 Prompt
+    const prompt = `
+    你是一位阅人无数、言辞犀利但内心柔软的人生导师。你的风格是“毒舌+幽默+一针见血”，类似于反矫情达人。
+    请根据用户对 ${questions.length} 个问题的回答，生成一份《2025 灵魂复盘报告》。
+    
+    用户回答：
+    ${questions.map((q, i) => `${i+1}. ${q} 答：${answers[i] || '（沉默）'}`).join('\n')}
+
+    请严格按照以下格式返回（不要使用Markdown代码块，不要加粗标题）：
+    
+    💀毒舌诊断
+    (这里写一段200字左右的刻薄但好笑的评价，指出用户的自欺欺人)
+    
+    📊关键指标
+    搞钱能力：★★☆☆☆ 赚得不少，但花得更多，典型的过路财神。
+    恋爱脑：★★★★☆ 别人撞南墙回头，你把墙拆了继续走。
+    精神状态：★☆☆☆☆ 表面稳如老狗，内心慌得一批。
+    
+    ❤️回血时刻
+    (这里写一段温暖的话，升华主题，给2026年打气)
+    
+    🔮年度关键词
+    (一个词)
+
+    💬年度箴言
+    (一句简短有力、直击人心的话，不超过20字)
+    `;
+
+    try {
+        const response = await fetch('/api/proxy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+        
+        console.log("Raw AI Response:", content); // 用于调试
+
+        // 1. 预处理：去除可能的 Markdown 代码块标记 (```)
+        content = content.replace(/```json|```/g, '').trim();
+
+        renderPaperReport(content);
+        showPage('result');
+
+    } catch (error) {
+        console.error(error);
+        alert('生成失败：' + error.message);
+        preSubmitActions.style.display = 'block'; // 恢复按钮
+        loadingRing.style.display = 'none';
+        document.getElementById('loadingTitle').innerText = '出错了';
+        document.getElementById('loadingText').innerText = '请检查网络或重试';
+    }
+}
+
+// 渲染纸质报告 HTML
+function renderPaperReport(text) {
+    const container = document.getElementById('reportContent');
+    container.innerHTML = ''; // 清空
+
+    // 1. 纸张外壳
+    const paper = document.createElement('div');
+    paper.className = 'report-paper';
+
+    // 2. 头部
+    paper.innerHTML += `
+        <div class="paper-header">
+            <h1>Soul Audit Report</h1>
+            <div class="main-title">2025 灵魂复盘报告</div>
+            <div style="font-size:12px; color:#999; margin-top:5px;">ID: ${Date.now().toString().slice(-6)}</div>
+        </div>
+    `;
+
+    // 3. 解析各个部分
+    const sections = parseAIResponse(text);
+
+    // 插入毒舌诊断
+    if (sections.toxic) {
+        paper.innerHTML += `
+            <div class="report-section">
+                <div class="section-head"><span class="section-num">01</span><div class="section-title">毒舌诊断</div></div>
+                <div class="report-text">${sections.toxic}</div>
+            </div>
+        `;
+    }
+
+    // 插入指标
+    if (sections.metrics) {
+        paper.innerHTML += `
+            <div class="report-section">
+                <div class="section-head"><span class="section-num">02</span><div class="section-title">关键指标</div></div>
+                <div class="rating-grid">
+                    ${formatMetrics(sections.metrics)}
+                </div>
+            </div>
+        `;
+    }
+
+    // 插入回血时刻
+    if (sections.warm) {
+        paper.innerHTML += `
+            <div class="report-section">
+                <div class="section-head"><span class="section-num">03</span><div class="section-title">回血时刻</div></div>
+                <div class="report-text">${sections.warm}</div>
+            </div>
+        `;
+    }
+
+    // 插入关键词和箴言
+    if (sections.keyword) {
+        paper.innerHTML += `
+            <div class="keyword-box">
+                <div style="font-size:12px; letter-spacing:2px; color:#888; margin-bottom:5px;">2025 KEYWORD</div>
+                <div class="keyword-text">${sections.keyword}</div>
+            </div>
+        `;
+
+        if (sections.motto) {
+            paper.innerHTML += `
+                <div class="keyword-motto">
+                    ${sections.motto}
+                </div>
+            `;
+        }
+    }
+
+    // 底部印章
+    const date = new Date();
+    paper.innerHTML += `
+        <div class="paper-footer">
+            <div class="stamp">已审阅<br>PASS</div>
+            <div class="date-sign">
+                DeepSeek Lab<br>
+                ${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()}
+            </div>
+        </div>
+    `;
+
+    container.appendChild(paper);
+}
+
+// 优化的解析器：使用正则，容错率更高
+function parseAIResponse(text) {
+    // 定义一个辅助函数，用来提取两个标题之间的内容
+    // 允许标题前后有 ** 或 ##，也允许标题后面有换行符
+    const extract = (startHeader, endHeader) => {
+        // 转义正则特殊字符
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // 构造正则：匹配 startHeader (可能包含**) 到 endHeader (或文本结束)
+        // [\s\S]*? 表示匹配中间所有字符（包括换行），非贪婪模式
+        let pattern;
+        if (endHeader) {
+            pattern = new RegExp(`(?:\\*\\*|##)?${escapeRegExp(startHeader)}(?:\\*\\*|##)?[:：]?\\s*([\\s\\S]*?)(?=(?:\\*\\*|##)?${escapeRegExp(endHeader)})`, 'i');
+        } else {
+            // 如果没有结束标题，直接匹配到最后
+            pattern = new RegExp(`(?:\\*\\*|##)?${escapeRegExp(startHeader)}(?:\\*\\*|##)?[:：]?\\s*([\\s\\S]*)`, 'i');
+        }
+
+        const match = text.match(pattern);
+        return match ? match[1].trim() : '';
+    };
+
+    // 依次提取
+    const toxic = extract('💀毒舌诊断', '📊关键指标');
+    const metrics = extract('📊关键指标', '❤️回血时刻');
+    const warm = extract('❤️回血时刻', '🔮年度关键词');
+    const keyword = extract('🔮年度关键词', '💬年度箴言');
+    const motto = extract('💬年度箴言', null); // 最后一个
+
+    return { toxic, metrics, warm, keyword, motto };
+}
+
+// 格式化评分（保持逻辑，增加一点点容错）
+function formatMetrics(text) {
+    return text.split('\n').filter(line => line.trim()).map(line => {
+        // 兼容中文冒号和英文冒号
+        const parts = line.split(/[:：]/);
+        if (parts.length < 2) return '';
+        
+        // 清理 Label 中的 markdown 符号
+        const label = parts[0].replace(/[*#\-]/g, '').trim();
+        const rest = parts.slice(1).join('：').trim();
+        
+        // 提取星星
+        const starMatch = rest.match(/[★☆]+/);
+        const stars = starMatch ? starMatch[0] : '★★★☆☆';
+        
+        // 提取点评
+        let comment = rest.replace(stars, '').trim();
+        comment = comment.replace(/^[\(（\[【]|[\)）\]】]$/g, '')
+                         .replace(/^点评[:：]?/, '')
+                         .trim();
+        
+        if (!comment) comment = "暂无详细评价";
+
+        return `
+            <div class="rating-item">
+                <div class="rating-header">
+                    <div class="rating-label">${label}</div>
+                    <div class="rating-stars">${stars}</div>
+                </div>
+                <div class="rating-comment">${comment}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ========== 截图功能 (保持不变) ==========
+async function saveAsImage() {
+    const btn = document.getElementById('saveImageBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '生成中...';
+    btn.disabled = true;
+
+    // 1. 添加截图模式类
+    container.classList.add('capture-mode');
+    
+    // 强制滚回顶部
+    window.scrollTo(0, 0);
+
+    // 等待布局重绘
+    await new Promise(r => setTimeout(r, 800)); // 稍微加长等待时间，确保渲染完成
+
+    try {
+        const canvas = await html2canvas(document.getElementById('resultPage'), {
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: null, 
+            logging: false,
+            width: 480, 
+            windowWidth: 480
+        });
+
+        const link = document.createElement('a');
+        link.download = `SoulAudit_2025_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+    } catch (err) {
+        console.error(err);
+        alert('截图失败，请手动截图保存');
+    } finally {
+        container.classList.remove('capture-mode');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+init();

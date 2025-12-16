@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>2025 灵魂复盘 | Soul Audit</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container" id="appContainer">
+        
+        <div id="startPage" class="page active">
+            <div class="bg-watermark">2025</div> <div class="header">
+                <div class="logo-text">SOUL AUDIT</div>
+                <h1 class="title">2025 年度<br>灵魂复盘</h1>
+                <p class="subtitle">这不是普通的问卷<br>是你与潜意识的深度对话</p>
+            </div>
+
+            <div class="start-content">
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-eye-2-line"></i>
+                        <span>40 个直击灵魂的提问</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-psychotherapy-line"></i>
+                        <span>毒舌导师在线诊断</span>
+                    </div>
+                </div>
+                <button id="startBtn" class="primary-btn">
+                    开始复盘 <i class="ri-arrow-right-line"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="quizPage" class="page">
+            <div class="quiz-header">
+                <div class="progress-container">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    QUESTION <span id="currentQuestion">1</span> / 40
+                </div>
+            </div>
+
+            <div class="question-container">
+                <div id="questionNumber" class="question-tag">01</div>
+                <h2 id="questionText" class="question-text">加载中...</h2>
+                <textarea id="answerInput" class="answer-input" placeholder="请写下你的回答..."></textarea>
+            </div>
+
+            <div class="quiz-nav">
+                <button id="prevBtn" class="secondary-btn" disabled>
+                    <i class="ri-arrow-left-line"></i>
+                </button>
+                <button id="nextBtn" class="primary-btn">
+                    下一题
+                </button>
+            </div>
+        </div>
+
+        <div id="submitPage" class="page">
+            <div class="bg-watermark">DONE</div> <div class="submit-content">
+                <div class="loading-ring"><div></div><div></div><div></div><div></div></div>
+                <h2 id="loadingTitle">完成！</h2>
+                <p id="loadingText">点击下方按钮<br>生成你的 2025 灵魂复盘报告</p>
+                
+                <div id="preSubmitActions">
+                    <button id="submitBtn" class="primary-btn">
+                        生成复盘报告 <i class="ri-magic-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultPage" class="page">
+            <div id="reportContent" class="report-content"></div>
+            
+            <div class="result-actions">
+                <button id="saveImageBtn" class="primary-btn full-width">
+                    <i class="ri-download-2-line"></i> 保存为图片
+                </button>
+                <button class="secondary-btn full-width" onclick="location.reload()">
+                    <i class="ri-restart-line"></i> 重新测试
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

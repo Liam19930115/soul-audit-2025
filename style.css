@@ -1,0 +1,519 @@
+/* ========== 全局变量与重置 ========== */
+:root {
+    --bg-dark: #121212;
+    --bg-card: rgba(30, 30, 30, 0.75);
+    --bg-paper: #F3F1E9; /* 护眼米白纸张 */
+    
+    --primary-gold: #D4AF37;
+    --primary-gold-gradient: linear-gradient(135deg, #D4AF37 0%, #AA8A26 100%);
+    
+    --text-light: #E0E0E0;
+    --text-muted: #888888;
+    --text-ink: #2C2C2C; /* 报告墨色 */
+    
+    --font-ui: 'Noto Sans SC', sans-serif;
+    --font-report: 'Noto Serif SC', serif;
+    --font-en: 'Playfair Display', serif;
+    
+    --radius: 24px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-ui);
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    /* 背景纹理 */
+    background-image: radial-gradient(circle at top right, rgba(212, 175, 55, 0.1), transparent 40%);
+}
+
+/* 容器：磨砂玻璃黑金风格 */
+.container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 700px;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 页面切换逻辑 */
+.page {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    padding: 30px;
+    animation: fadeIn 0.5s ease;
+}
+.page.active { display: flex; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 组件样式 ========== */
+
+/* 按钮 */
+.primary-btn {
+    background: var(--primary-gold-gradient);
+    color: #1a1a1a;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+.primary-btn:active { transform: scale(0.98); }
+.primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.secondary-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 14px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+}
+
+/* 输入框 */
+.answer-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    padding: 15px;
+    font-size: 16px;
+    resize: none;
+    height: 150px;
+    margin-top: 20px;
+    font-family: inherit;
+}
+.answer-input:focus { outline: none; border-color: var(--primary-gold); }
+
+/* ========== 具体页面样式 ========== */
+
+/* 1. 首页 */
+#startPage { justify-content: space-between; padding-top: 60px; padding-bottom: 50px; }
+.logo-text { font-family: var(--font-en); letter-spacing: 4px; font-size: 12px; color: var(--primary-gold); margin-bottom: 20px; }
+.title { font-size: 42px; font-family: var(--font-report); font-weight: 300; line-height: 1.2; margin-bottom: 10px; }
+.subtitle { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+.feature-list { margin-bottom: 40px; }
+.feature-item { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; color: var(--text-light); }
+.feature-item i { color: var(--primary-gold); font-size: 20px; }
+
+/* 2. 问答页 */
+.quiz-header { margin-bottom: 30px; }
+.progress-container { height: 2px; background: rgba(255,255,255,0.1); margin-bottom: 10px; }
+.progress-fill { height: 100%; background: var(--primary-gold); width: 0%; transition: width 0.3s; }
+.progress-text { font-family: var(--font-en); font-size: 12px; color: var(--text-muted); letter-spacing: 2px; }
+
+.question-tag { font-family: var(--font-en); font-size: 40px; color: rgba(255,255,255,0.05); font-weight: 700; position: absolute; top: -20px; right: 0; z-index: -1; }
+.question-container { position: relative; flex: 1; }
+.question-text { font-size: 22px; line-height: 1.5; margin-top: 20px; font-weight: 400; }
+
+.quiz-nav { display: flex; gap: 15px; margin-top: 20px; }
+#nextBtn { flex: 2; }
+
+/* 3. 提交页 loading */
+.submit-content { text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+.loading-ring { display: inline-block; position: relative; width: 64px; height: 64px; margin: 0 auto 30px; }
+.loading-ring div { box-sizing: border-box; display: block; position: absolute; width: 50px; height: 50px; margin: 8px; border: 3px solid var(--primary-gold); border-radius: 50%; animation: ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; border-color: var(--primary-gold) transparent transparent transparent; }
+.loading-ring div:nth-child(1) { animation-delay: -0.45s; }
+.loading-ring div:nth-child(2) { animation-delay: -0.3s; }
+.loading-ring div:nth-child(3) { animation-delay: -0.15s; }
+@keyframes ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ========== 4. 报告页面 (核心设计) ========== */
+#resultPage { padding: 0; overflow-y: auto; background: transparent; }
+
+.report-content { padding: 20px; }
+
+/* 纸张容器 */
+.report-paper {
+    background: var(--bg-paper);
+    color: var(--text-ink);
+    padding: 40px 30px;
+    position: relative;
+    /* 纸质纹理噪点 */
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z'/%3E%3C/g%3E%3C/svg%3E");
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    min-height: 600px;
+}
+
+/* 报告排版 */
+.paper-header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 30px; }
+.paper-header h1 { font-family: var(--font-en); font-size: 16px; letter-spacing: 4px; text-transform: uppercase; color: #666; }
+.paper-header .main-title { font-family: var(--font-report); font-size: 28px; font-weight: 700; color: #1a1a1a; margin-top: 5px; }
+
+.report-section { margin-bottom: 35px; position: relative; }
+.section-head { display: flex; align-items: center; margin-bottom: 12px; }
+.section-num { background: #1a1a1a; color: #fff; padding: 2px 8px; font-size: 12px; font-family: var(--font-en); margin-right: 10px; }
+.section-title { font-family: var(--font-report); font-weight: 700; font-size: 18px; border-bottom: 1px solid #ccc; flex: 1; padding-bottom: 4px; }
+
+.report-text { font-family: var(--font-report); font-size: 15px; line-height: 1.8; text-align: justify; color: #333; }
+.report-text strong { color: #b8860b; font-weight: 700; } /* 强调色 */
+
+/* ========== 评分模块优化布局 ========== */
+
+.rating-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 每个指标之间的间距 */
+    background: rgba(0,0,0,0.03);
+    padding: 20px;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 4px;
+}
+
+.rating-item {
+    display: flex;
+    flex-direction: column; /* 垂直排列：上面是头，下面是文 */
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 12px;
+}
+
+.rating-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* 第一行：包含标题和星星，让它们左右对齐 */
+.rating-header {
+    display: flex;
+    justify-content: space-between; /* 一左一右 */
+    align-items: center; /* 垂直居中对齐 */
+    margin-bottom: 8px; /* 标题和下方点评的间距 */
+}
+
+.rating-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.rating-stars {
+    color: #b8860b;
+    letter-spacing: 2px;
+    font-size: 16px; /* 调整星星大小与标题匹配 */
+    white-space: nowrap; /* 防止星星换行 */
+}
+
+/* 第二行：点评文字，铺开显示 */
+.rating-comment {
+    font-size: 13px;
+    color: #555;
+    font-style: italic;
+    line-height: 1.6;
+    text-align: justify; /* 两端对齐，排版更好看 */
+    opacity: 0.9;
+}
+
+/* 关键词 */
+.keyword-box { text-align: center; padding: 20px; border: 1px double #1a1a1a; margin-top: 20px; }
+.keyword-text { font-family: var(--font-report); font-size: 32px; font-weight: 700; color: #b8860b; margin: 10px 0; }
+
+/* 底部印章 */
+.paper-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 1px solid #ccc; }
+.stamp { width: 70px; height: 70px; border: 3px double #d63031; color: #d63031; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; transform: rotate(-15deg); font-family: var(--font-en); opacity: 0.8; font-size: 14px; }
+.date-sign { text-align: right; font-size: 12px; color: #666; font-family: var(--font-en); line-height: 1.4; }
+
+/* 操作栏 */
+.result-actions { padding: 20px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+.full-width { width: 100%; }
+
+/* ========== 截图专用模式 (修复版) ========== */
+.capture-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* 关键修改：强制宽度为 480px，不随手机屏幕变窄 */
+    width: 480px !important; 
+    min-width: 480px !important;
+    
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    transform: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    z-index: 9999;
+    /* 既然强制了宽度，可能超出小手机屏幕，所以要隐藏溢出防止滚动条干扰截图 */
+    left: -9999px; 
+}
+
+/* 截图时隐藏除了纸张以外的所有东西 */
+.capture-mode > *:not(#resultPage) { display: none !important; }
+.capture-mode #resultPage { display: block !important; padding: 0 !important; }
+.capture-mode .result-actions { display: none !important; }
+
+/* 截图时让纸张铺满，不要有阴影，背景要是纯色 */
+.capture-mode .report-content { padding: 0 !important; margin: 0 !important; }
+.capture-mode .report-paper {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    /* 关键：防止 html2canvas 渲染透明背景 */
+    background-color: #F3F1E9 !important; 
+}
+
+/* 截图时所有动画关闭 */
+.capture-mode * {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* ========== 开始页面优化 ========== */
+
+/* 1. 让页面内容垂直居中，而不是两端对齐 */
+#startPage {
+    justify-content: center; /* 垂直居中 */
+    align-items: center;     /* 水平居中 */
+    gap: 40px;              /* 控制上下块之间的间距 */
+    text-align: center;      /* 文字居中 */
+    padding-top: 40px;
+    padding-bottom: 40px;
+    position: relative;      /* 为水印定位 */
+    z-index: 1;
+}
+
+/* 2. 背景大水印样式 */
+.bg-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-en); /* 使用英文字体 */
+    font-size: 180px;            /* 超大字号 */
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.03); /* 极低透明度，若隐若现 */
+    z-index: -1;                 /* 放在最底层 */
+    pointer-events: none;        /* 不影响点击 */
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* 3. 头部文字调整 */
+.header {
+    margin-bottom: 0; /* 去掉之前的底部边距，用父级 gap 控制 */
+}
+
+.logo-text {
+    justify-content: center; /* 如果是 flex 布局 */
+    display: block;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.title {
+    font-size: 48px; /* 稍微加大标题 */
+    margin-bottom: 20px;
+}
+
+.subtitle {
+    font-size: 15px;
+    max-width: 80%; /* 限制宽度，防止文字太长 */
+    margin: 0 auto; /* 居中 */
+    opacity: 0.6;
+}
+
+/* 4. 内容区域调整 */
+.start-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px; /* 列表和按钮之间的间距 */
+}
+
+/* 5. 功能列表居中 */
+.feature-list {
+    display: flex;
+    flex-direction: column; /* 依然垂直排列 */
+    gap: 15px;
+    margin-bottom: 10px;
+    align-items: center; /* 关键：让列表项水平居中 */
+}
+
+.feature-item {
+    background: rgba(255, 255, 255, 0.03); /* 给个淡淡的背景条 */
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 14px;
+    color: var(--text-light);
+    width: auto; /* 宽度自适应内容 */
+    min-width: 240px; /* 保证最小宽度 */
+    justify-content: center; /* 内容居中 */
+}
+
+.feature-item i {
+    color: var(--primary-gold);
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+/* ========== 提交页面布局优化 ========== */
+
+/* 1. 强制页面容器垂直居中 */
+#submitPage {
+    justify-content: center; /* 垂直居中 */
+    align-items: center;     /* 水平居中 */
+    text-align: center;
+    position: relative;      /* 为水印定位 */
+    z-index: 1;
+    height: 100%;            /* 撑满高度 */
+    min-height: 600px;       /* 保证最小高度 */
+}
+
+/* 2. 内容区域布局 */
+.submit-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px; /* 元素之间的间距 */
+    width: 100%;
+    height: auto; /* 取消之前的 height: 100% */
+}
+
+/* 3. 字体调整 */
+#loadingTitle {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 0; /* 由 gap 控制间距 */
+    font-family: var(--font-report);
+}
+
+/* ... 前面的代码 ... */
+
+#loadingText {
+    font-size: 16px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 0;
+} /* <--- 补上这个大括号 */
+
+/* 年度箴言样式 (独立显示版) */
+.keyword-motto {
+    font-family: 'Noto Serif SC', serif; /* 衬线体 */
+    font-size: 16px; /* 字号微调 */
+    color: #444;     /* 颜色深一点，更清晰 */
+    margin-top: 25px; /* 增加与上方关键词盒子的距离 */
+    margin-bottom: 10px;
+    font-style: italic; /* 斜体 */
+    text-align: center; /* 强制居中 */
+    line-height: 1.6;
+    padding: 0 10px;
+}
+
+/* 关键词盒子 (保持不变，或者确认一下样式) */
+.keyword-box {
+    text-align: center;
+    padding: 30px 20px;
+    border: 1px double rgba(0,0,0,0.1); /* 双线边框更高级 */
+    background: rgba(0,0,0,0.02);
+    margin-top: 30px;
+    border-radius: 4px;
+}
+
+/* ========== 📱 移动端响应式适配 (加在 style.css 最后) ========== */
+
+/* 针对高度较矮的屏幕 (如 iPhone 8/SE, 旧款安卓) */
+@media screen and (max-height: 750px) {
+    .container {
+        min-height: 100vh; /* 不强制 700px，改为视口高度 */
+        padding-bottom: 20px;
+    }
+
+    #startPage {
+        gap: 20px; /* 缩小垂直间距 */
+    }
+
+    .title {
+        font-size: 36px; /* 标题改小 */
+        margin-bottom: 10px;
+    }
+
+    .bg-watermark {
+        font-size: 140px; /* 水印改小 */
+    }
+}
+
+/* 针对宽度较窄的屏幕 (宽 < 390px, 如 iPhone mini, SE) */
+@media screen and (max-width: 390px) {
+    /* 1. 容器瘦身 */
+    .container {
+        border-radius: 0; /* 小屏满宽显示，去掉圆角显得更大气 */
+        border: none;
+        height: 100vh; /* 撑满全屏 */
+    }
+    
+    body {
+        padding: 0; /* 去掉 body 的外边距 */
+    }
+
+    /* 2. 纸张和内容区域缩小边距 */
+    .report-paper {
+        padding: 30px 20px; /* 左右边距减小 */
+    }
+
+    .keyword-box {
+        padding: 20px 10px;
+    }
+
+    /* 3. 评分行适配：防止星星换行 */
+    .rating-header {
+        gap: 5px; /* 减小标题和星星之间的空隙 */
+    }
+    
+    .rating-label {
+        font-size: 15px; /* 字体稍微改小 */
+        max-width: 60%; /* 限制标题宽度，防止把星星挤下去 */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .rating-stars {
+        font-size: 14px; /* 星星改小 */
+        letter-spacing: 1px;
+    }
+
+    /* 4. 按钮调整 */
+    .primary-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+
+    /* 5. 箴言调整 */
+    .keyword-motto {
+        font-size: 14px;
+        margin-top: 20px;
+    }
+}
