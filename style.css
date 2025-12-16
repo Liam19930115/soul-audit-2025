@@ -562,3 +562,32 @@ body {
     background: none;
     border: none;
 }
+
+/* ========== 新增：最终生成图片的样式 ========== */
+.final-image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.generated-report-img {
+    width: 100%;
+    max-width: 480px; /* 限制最大宽度，和生成时的宽度一致 */
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    /* 给图片加一个白边，看起来更像一张照片卡片 */
+    border: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.save-hint {
+    margin-top: 15px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 20px;
+    border-radius: 50px;
+    letter-spacing: 1px;
+    pointer-events: none; /* 让点击穿透，确保长按的是图片 */
+}

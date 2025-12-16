@@ -182,6 +182,8 @@ async function generateReport() {
         content = content.replace(/```json|```/g, '').trim();
 
         renderPaperReport(content);
+        // 【插入这一行】等待自动转图片完成
+        await autoConvertHtmlToImage();
         showPage('result');
 
     } catch (error) {
@@ -345,6 +347,78 @@ function formatMetrics(text) {
             </div>
         `;
     }).join('');
+}
+
+// ========== 新增：自动将 HTML 转换为图片并替换显示 ==========
+async function autoConvertHtmlToImage() {
+    // 1. 获取刚才渲染好的 HTML 报告源
+    const source = document.querySelector('.report-paper');
+    const container = document.getElementById('reportContent');
+
+    if (!source || !container) {
+        console.error("无法找到报告元素进行截图");
+        return;
+    }
+    
+    // 更新 Loading 提示文字，让用户知道正在处理图片
+    document.getElementById('loadingText').innerText = '正在生成最终报告卡片...';
+
+    // 2. 创建一个后台“摄影棚”（为了保证截图稳定，不在当前页面直接截）
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+        position: 'fixed',
+        top: '0',
+        left: '-9999px', // 移出屏幕外，用户看不见
+        width: '480px',  // 强制固定宽度，保证排版一致
+        zIndex: '-9999',
+        background: '#F3F1E9', // 确保背景不透明
+        overflow: 'hidden'
+    });
+
+    // 3. 克隆报告到摄影棚
+    const clone = source.cloneNode(true);
+    Object.assign(clone.style, {
+        width: '100%',
+        margin: '0',
+        boxShadow: 'none', // 去掉阴影，图片边缘更干净
+        transform: 'none'
+    });
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    // 等待一小会儿让浏览器完成渲染
+    await new Promise(r => setTimeout(r, 300));
+
+    try {
+        // 4. 拍照！
+        const canvas = await html2canvas(wrapper, {
+            scale: 2, // 2倍高清
+            useCORS: true, // 允许跨域字体
+            allowTaint: false,
+            backgroundColor: '#F3F1E9',
+            logging: false,
+            width: 480,
+            windowWidth: 480
+        });
+
+        // 5. 销毁摄影棚
+        document.body.removeChild(wrapper);
+
+        // 6. 用生成的图片替换掉原来的 HTML 结构
+        const imgData = canvas.toDataURL('image/png');
+        container.innerHTML = `
+            <div class="final-image-container" style="animation: fadeIn 0.5s ease;">
+                <img src="${imgData}" alt="2025灵魂复盘报告" class="generated-report-img">
+                <div class="save-hint">👆 长按上方图片保存到相册</div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error("自动截图失败:", error);
+        // 如果失败了，保留 HTML 原样显示，作为兜底
+        document.body.removeChild(wrapper);
+        alert('生成图片卡片失败，但这不影响您查看报告。您依然可以尝试直接截屏。');
+    }
 }
 
 init();
