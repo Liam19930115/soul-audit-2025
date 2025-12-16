@@ -349,51 +349,49 @@ function formatMetrics(text) {
     }).join('');
 }
 
-// ========== 新增：自动将 HTML 转换为图片并替换显示 ==========
+// ========== 修复版：自动截图 (防 iOS 丢失对象 + 自动降级) ==========
 async function autoConvertHtmlToImage() {
-    // 1. 获取刚才渲染好的 HTML 报告源
+    // 1. 获取源内容
     const source = document.querySelector('.report-paper');
     const container = document.getElementById('reportContent');
 
-    if (!source || !container) {
-        console.error("无法找到报告元素进行截图");
-        return;
-    }
+    if (!source || !container) return; // 如果找不到，直接放弃，显示原网页
     
-    // 更新 Loading 提示文字，让用户知道正在处理图片
-    document.getElementById('loadingText').innerText = '正在生成最终报告卡片...';
+    document.getElementById('loadingText').innerText = '正在生成报告卡片...';
 
-    // 2. 创建一个后台“摄影棚”（为了保证截图稳定，不在当前页面直接截）
+    // 2. 创建摄影棚 (关键修改：不再移出屏幕，而是放在底层)
     const wrapper = document.createElement('div');
     Object.assign(wrapper.style, {
         position: 'fixed',
-        top: '0',
-        left: '-9999px', // 移出屏幕外，用户看不见
-        width: '480px',  // 强制固定宽度，保证排版一致
-        zIndex: '-9999',
-        background: '#F3F1E9', // 确保背景不透明
-        overflow: 'hidden'
+        top: '0', 
+        left: '0',      // 【关键】留在屏幕内
+        width: '480px', // 锁定宽度
+        height: 'auto',
+        zIndex: '-9999', // 【关键】藏在最底下
+        background: '#F3F1E9',
+        overflow: 'hidden',
+        visibility: 'visible' // 【关键】必须可见，否则 iOS 不渲染
     });
 
-    // 3. 克隆报告到摄影棚
+    // 3. 克隆报告
     const clone = source.cloneNode(true);
     Object.assign(clone.style, {
         width: '100%',
         margin: '0',
-        boxShadow: 'none', // 去掉阴影，图片边缘更干净
+        boxShadow: 'none',
         transform: 'none'
     });
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
-    // 等待一小会儿让浏览器完成渲染
-    await new Promise(r => setTimeout(r, 300));
+    // 给 iOS 一点反应时间
+    await new Promise(r => setTimeout(r, 500));
 
     try {
-        // 4. 拍照！
+        // 4. 尝试截图
         const canvas = await html2canvas(wrapper, {
-            scale: 2, // 2倍高清
-            useCORS: true, // 允许跨域字体
+            scale: 2, 
+            useCORS: true,
             allowTaint: false,
             backgroundColor: '#F3F1E9',
             logging: false,
@@ -401,10 +399,7 @@ async function autoConvertHtmlToImage() {
             windowWidth: 480
         });
 
-        // 5. 销毁摄影棚
-        document.body.removeChild(wrapper);
-
-        // 6. 用生成的图片替换掉原来的 HTML 结构
+        // 5. 成功：替换为图片
         const imgData = canvas.toDataURL('image/png');
         container.innerHTML = `
             <div class="final-image-container" style="animation: fadeIn 0.5s ease;">
@@ -414,10 +409,22 @@ async function autoConvertHtmlToImage() {
         `;
 
     } catch (error) {
-        console.error("自动截图失败:", error);
-        // 如果失败了，保留 HTML 原样显示，作为兜底
-        document.body.removeChild(wrapper);
-        alert('生成图片卡片失败，但这不影响您查看报告。您依然可以尝试直接截屏。');
+        console.warn("自动转图片失败，已降级为 HTML 显示:", error);
+        // 【关键】这里不再弹窗报错，而是默默失败
+        // 失败后，container 里依然是 renderPaperReport 渲染好的 HTML
+        // 我们只加一个提示，告诉用户可以手动截图
+        const hint = document.createElement('div');
+        hint.className = 'save-hint';
+        hint.style.textAlign = 'center';
+        hint.style.marginTop = '20px';
+        hint.innerHTML = '⚠️ 自动生成卡片失败，请直接<b>截图</b>保存';
+        container.appendChild(hint);
+        
+    } finally {
+        // 6. 无论成功失败，都要清理垃圾
+        if (document.body.contains(wrapper)) {
+            document.body.removeChild(wrapper);
+        }
     }
 }
 
