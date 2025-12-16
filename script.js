@@ -348,62 +348,61 @@ function formatMetrics(text) {
     }).join('');
 }
 
-// ========== 最终修正版：解决图片透明/空白问题 ==========
+// ========== 最终终极版：智能重试截图 (修复 Insecure 报错) ==========
 async function saveAsImage() {
     const btn = document.getElementById('saveImageBtn');
     const originalText = btn.innerHTML;
     
-    // 1. 按钮变 loading 状态
+    // 1. 按钮变 loading
     btn.innerHTML = '<i class="ri-loader-4-line"></i> 绘制中...';
     btn.disabled = true;
 
-    try {
-        const originalContent = document.querySelector('.report-paper');
-        if (!originalContent) throw new Error("未找到报告内容");
-
-        // 2. 创建“摄影棚”容器
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '0'; // 放在顶部
-        wrapper.style.left = '0';
-        wrapper.style.width = '480px'; 
-        // 【关键修复1】不能设为 opacity: 0，否则截图也是透明的！
-        // 改为 z-index: -9999 (放在最底层)，这样用户看不见，但浏览器能渲染
-        wrapper.style.zIndex = '-9999'; 
-        wrapper.style.opacity = '1'; 
-        // 【关键修复2】给容器强制加上米色背景，防止透明
-        wrapper.style.background = '#F3F1E9'; 
+    // 定义一个通用的截图函数
+    const capture = async (useCORS, scale) => {
+        const targetElement = document.querySelector('.report-paper');
+        if (!targetElement) throw new Error("未找到报告内容");
         
-        // 3. 克隆报告纸
-        const clone = originalContent.cloneNode(true);
-        // 【关键修复3】强制样式：撑满、无阴影、确保文字颜色正确
-        clone.style.width = '100%'; 
-        clone.style.margin = '0';   
-        clone.style.boxShadow = 'none'; 
-        clone.style.transform = 'none';
-        clone.style.color = '#2C2C2C'; // 强制指定文字颜色，防止继承丢失
-        
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-
-        // 给浏览器一点渲染时间 (100ms)
+        // 滚回顶部，防止留白
+        window.scrollTo(0, 0);
         await new Promise(r => setTimeout(r, 100));
 
-        // 4. 截图
-        const canvas = await html2canvas(wrapper, {
-            scale: 2, // 高清
-            useCORS: true,
+        return await html2canvas(targetElement, {
+            scale: scale, 
+            useCORS: useCORS, // 关键参数：是否加载外部资源
+            allowTaint: false,
+            backgroundColor: '#F3F1E9', // 强制背景色
             logging: false,
-            backgroundColor: '#F3F1E9', // 再次确保背景色
-            width: 480,
-            windowWidth: 480
+            onclone: (clonedDoc) => {
+                const clonedPaper = clonedDoc.querySelector('.report-paper');
+                if(clonedPaper) {
+                   clonedPaper.style.transform = 'none';
+                   clonedPaper.style.boxShadow = 'none';
+                   clonedPaper.style.margin = '0 auto';
+                }
+            }
         });
+    };
 
-        // 5. 清理现场
-        document.body.removeChild(wrapper);
-        
-        // 6. 生成图片并弹窗
+    try {
+        let canvas;
+        try {
+            // 【尝试 1】高清模式 (尝试加载字体)
+            // scale: 2 (高清), useCORS: true (加载字体)
+            console.log("尝试高清截图...");
+            canvas = await capture(true, 2);
+        } catch (error) {
+            console.warn("高清截图失败，切换至兼容模式", error);
+            // 如果报错 "Insecure" 或其他，立刻自动重试
+            
+            // 【尝试 2】兼容模式 (放弃字体，使用系统默认字体，保证能出图)
+            // scale: 1.5 (降低内存), useCORS: false (断绝跨域干扰)
+            canvas = await capture(false, 1.5);
+        }
+
+        // 3. 生成图片
         const imgData = canvas.toDataURL('image/png');
+
+        // 4. 弹窗显示
         const modal = document.createElement('div');
         modal.className = 'image-modal';
         modal.innerHTML = `
@@ -419,8 +418,8 @@ async function saveAsImage() {
         document.body.appendChild(modal);
 
     } catch (err) {
-        console.error(err);
-        alert('截图失败：' + (err.message || '请重试'));
+        console.error("最终截图失败:", err);
+        alert('生成图片失败。\n请直接【截屏】保存即可，效果是一样的。');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
