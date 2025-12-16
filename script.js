@@ -348,41 +348,57 @@ function formatMetrics(text) {
     }).join('');
 }
 
-// ========== 截图功能 (保持不变) ==========
+// script.js - 替换原有的 saveAsImage 函数
+
 async function saveAsImage() {
     const btn = document.getElementById('saveImageBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '生成中...';
+    
+    // 1. 改变按钮状态
+    btn.innerHTML = '<i class="ri-loader-4-line"></i> 生成中...';
     btn.disabled = true;
 
-    // 1. 添加截图模式类
+    // 2. 进入截图模式
     container.classList.add('capture-mode');
-    
-    // 强制滚回顶部
     window.scrollTo(0, 0);
 
-    // 等待布局重绘
-    await new Promise(r => setTimeout(r, 800)); // 稍微加长等待时间，确保渲染完成
+    // 等待渲染缓冲
+    await new Promise(r => setTimeout(r, 800));
 
     try {
+        // 3. 生成图片数据
         const canvas = await html2canvas(document.getElementById('resultPage'), {
             scale: 2, 
             useCORS: true,
-            backgroundColor: null, 
+            backgroundColor: '#F3F1E9', // 强制指定背景色，防止透明
             logging: false,
             width: 480, 
             windowWidth: 480
         });
 
-        const link = document.createElement('a');
-        link.download = `SoulAudit_2025_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        const imgData = canvas.toDataURL('image/png');
+
+        // 4. 创建弹窗显示图片 (核心修改点)
+        const modal = document.createElement('div');
+        modal.className = 'image-modal';
+        modal.innerHTML = `
+            <button class="close-modal" onclick="this.parentElement.remove()">×</button>
+            <img src="${imgData}" alt="Soul Audit Report">
+            <div class="modal-tip">👆 长按图片保存到相册</div>
+        `;
+        
+        // 点击背景也可以关闭
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
+
+        document.body.appendChild(modal);
 
     } catch (err) {
         console.error(err);
-        alert('截图失败，请手动截图保存');
+        alert('生成图片失败，请尝试刷新页面重试');
     } finally {
+        // 5. 恢复原状
         container.classList.remove('capture-mode');
         btn.innerHTML = originalText;
         btn.disabled = false;

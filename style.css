@@ -517,3 +517,48 @@ body {
         margin-top: 20px;
     }
 }
+
+/* ========== 新增：长按保存弹窗样式 ========== */
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* 深色背景 */
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.image-modal img {
+    max-width: 85%;  /* 图片宽度 */
+    max-height: 80%; /* 防止图片太长超出屏幕 */
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+}
+
+.modal-tip {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 50px;
+    pointer-events: none; /* 让点击穿透，不影响长按 */
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #fff;
+    font-size: 30px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
