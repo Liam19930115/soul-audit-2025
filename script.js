@@ -273,7 +273,7 @@ function renderPaperReport(text) {
         <div class="paper-footer">
             <div class="stamp">已审阅<br>PASS</div>
             <div class="date-sign">
-                DeepSeek Lab<br>
+                Review time<br>
                 ${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()}
             </div>
         </div>
