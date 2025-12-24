@@ -410,25 +410,6 @@ function hideRedeemModal() {
     redeemError.style.display = 'none'; // 隐藏错误提示
 }
 
-function handleRedeem() {
-    const code = redeemInput.value.trim().toUpperCase(); // 获取并转为大写
-    
-    if (code.length === 0) {
-        showError("请输入兑换码");
-        return;
-    }
-
-    // 核心验证逻辑
-    if (VALID_CODES.has(code)) {
-        // 验证成功
-        // alert('兑换成功！'); // 已移除成功提示
-        hideRedeemModal();
-        showPage('quiz'); // 进入问卷页面
-    } else {
-        // 验证失败
-        showError("兑换码无效或已被使用");
-    }
-}
 function showError(message) {
     redeemError.textContent = message;
     redeemError.style.display = 'block';
