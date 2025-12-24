@@ -353,13 +353,51 @@ function formatMetrics(text) {
 }
 
 // ========== 兑换码功能 ==========
-// 警告：此方法仅用于本地测试，直接暴露了兑换码。
-// 线上部署请务必使用后端API验证方案（如Vercel Serverless Functions）。
-const VALID_CODES = new Set([
-    '11112222', 
-    '88888888', // 你的测试码
-    'A1B2C3D4'  // 也可以是字母数字组合
-]);
+// script.js (修改后)
+
+async function handleRedeem() {
+    const btn = document.getElementById('redeemConfirmBtn');
+    const code = redeemInput.value.trim().toUpperCase();
+    
+    if (code.length === 0) {
+        showError("请输入兑换码");
+        return;
+    }
+    
+    // 禁用按钮，防止重复点击
+    btn.disabled = true;
+    btn.innerText = '验证中...';
+    redeemError.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/redeem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code: code }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            // 验证成功
+            hideRedeemModal();
+            showPage('quiz'); // 进入问卷页面
+        } else {
+            // 验证失败，显示从后端返回的错误信息
+            showError(result.message || "兑换失败，请重试");
+        }
+
+    } catch (error) {
+        console.error('Fetch aPI/redeem error:', error);
+        showError("网络错误，请检查连接并重试");
+    } finally {
+        // 无论成功失败，都恢复按钮状态
+        btn.disabled = false;
+        btn.innerText = '立即兑换';
+    }
+}
 
 function showRedeemModal() {
     redeemModal.classList.add('active');
