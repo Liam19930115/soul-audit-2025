@@ -125,6 +125,8 @@ function handlePrev() {
 }
 
 // ========== 核心：生成报告 ==========
+// script.js (修改后)
+
 async function generateReport() {
     const btn = document.getElementById('submitBtn');
     const loadingRing = document.querySelector('.loading-ring');
@@ -136,10 +138,7 @@ async function generateReport() {
     document.getElementById('loadingTitle').innerText = '导师正在分析...';
     document.getElementById('loadingText').innerText = '正在链接你的潜意识数据库';
 
-    // ⚠️ 请确认这里是你的 API KEY
-    const apiKey = 'sk-1f8a3262abf74e508abc3dc6880face0'; 
-    
-    // 构建 Prompt
+    // 1. 构建 Prompt (这部分不变)
     const prompt = `
     你是一位阅人无数、言辞犀利但内心柔软的人生导师。你的风格是“毒舌+幽默+一针见血”，类似于反矫情达人。
     请根据用户对 ${questions.length} 个问题的回答，生成一份《2025 灵魂复盘报告》。
@@ -167,24 +166,35 @@ async function generateReport() {
     (一句简短有力、直击人心的话，不超过20字)
     `;
 
-    try {
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'deepseek-reasoner',
-                messages: [
-                    {role: 'system', content: '你是一个犀利、幽默、排版精美的AI助手。'},
-                    {role: 'user', content: prompt}
-                ],
-                temperature: 0.8
-            })
-        });
+try {
+    const response = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        // 将原本要发给 deepseek 的 body，完整地发给我们的 proxy
+        body: JSON.stringify({
+            model: 'deepseek-reasoner', // 模型在这里指定
+            messages: [
+                {role: 'system', content: '你是一个犀利、幽默、排版精美的AI助手。'},
+                {role: 'user', content: prompt}
+            ],
+            temperature: 0.8
+        })
+    });
+
+        if (!response.ok) {
+            // 如果服务器返回错误（如 500），在这里捕获
+            throw new Error(`服务器错误: ${response.status} ${response.statusText}`);
+        }
 
         const data = await response.json();
+        
+        // 检查 DeepSeek 返回的数据是否有误
+        if (data.error) {
+            throw new Error(`API 错误: ${data.error.message}`);
+        }
+
         const content = data.choices[0].message.content;
         
         renderPaperReport(content);
@@ -192,11 +202,15 @@ async function generateReport() {
 
     } catch (error) {
         console.error(error);
-        alert('生成失败，请检查 API Key 或网络');
+        // 给用户更友好的提示
+        alert(`生成失败，原因：\n${error.message}\n\n请稍后重试或联系客服。`);
         preSubmitActions.style.display = 'block'; // 恢复按钮
         loadingRing.style.display = 'none';
+        document.getElementById('loadingTitle').innerText = '生成报告';
+        document.getElementById('loadingText').innerText = '点击下方按钮，生成你的 2025 灵魂复盘报告';
     }
 }
+
 
 // 渲染纸质报告 HTML
 function renderPaperReport(text) {
