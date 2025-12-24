@@ -137,7 +137,7 @@ async function generateReport() {
     document.getElementById('loadingText').innerText = '正在链接你的潜意识数据库';
 
     // ⚠️ 请确认这里是你的 API KEY
-    const apiKey = 'sk-518278d9b6104a8c9fc1fe5f9718f911'; 
+    const apiKey = 'sk-1f8a3262abf74e508abc3dc6880face0'; 
     
     // 构建 Prompt
     const prompt = `
