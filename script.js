@@ -174,7 +174,7 @@ try {
         },
         // 将原本要发给 deepseek 的 body，完整地发给我们的 proxy
         body: JSON.stringify({
-            model: 'deepseek-reasoner', // 模型在这里指定
+            model: 'deepseek-chat', // 模型在这里指定
             messages: [
                 {role: 'system', content: '你是一个犀利、幽默、排版精美的AI助手。'},
                 {role: 'user', content: prompt}
