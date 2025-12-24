@@ -241,52 +241,7 @@ body {
 .date-sign { text-align: right; font-size: 12px; color: #666; font-family: var(--font-en); line-height: 1.4; }
 
 /* 操作栏 */
-.result-actions { padding: 20px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
 .full-width { width: 100%; }
-
-/* ========== 截图专用模式 (修复版) ========== */
-.capture-mode {
-    position: fixed;
-    top: 0;
-    left: 0;
-    /* 关键修改：强制宽度为 480px，不随手机屏幕变窄 */
-    width: 480px !important; 
-    min-width: 480px !important;
-    
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    transform: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    z-index: 9999;
-    /* 既然强制了宽度，可能超出小手机屏幕，所以要隐藏溢出防止滚动条干扰截图 */
-    left: -9999px; 
-}
-
-/* 截图时隐藏除了纸张以外的所有东西 */
-.capture-mode > *:not(#resultPage) { display: none !important; }
-.capture-mode #resultPage { display: block !important; padding: 0 !important; }
-.capture-mode .result-actions { display: none !important; }
-
-/* 截图时让纸张铺满，不要有阴影，背景要是纯色 */
-.capture-mode .report-content { padding: 0 !important; margin: 0 !important; }
-.capture-mode .report-paper {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    /* 关键：防止 html2canvas 渲染透明背景 */
-    background-color: #F3F1E9 !important; 
-}
-
-/* 截图时所有动画关闭 */
-.capture-mode * {
-    animation: none !important;
-    transition: none !important;
-}
 
 /* ========== 开始页面优化 ========== */
 

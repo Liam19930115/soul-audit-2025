@@ -63,7 +63,6 @@ document.getElementById('startBtn').onclick = showRedeemModal; // 修改：点�
 document.getElementById('nextBtn').onclick = handleNext;
 document.getElementById('prevBtn').onclick = handlePrev;
 document.getElementById('submitBtn').onclick = generateReport; 
-document.getElementById('saveImageBtn').onclick = saveAsImage;
 document.getElementById('redeemConfirmBtn').onclick = handleRedeem;
 redeemModal.onclick = (e) => { // 点击遮罩层关闭
     if (e.target === redeemModal) {
@@ -351,43 +350,6 @@ function formatMetrics(text) {
             </div>
         `;
     }).join('');
-}
-
-// ========== 截图功能 ==========
-async function saveAsImage() {
-    const btn = document.getElementById('saveImageBtn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '生成中...';
-    btn.disabled = true;
-
-    container.classList.add('capture-mode');
-    window.scrollTo(0, 0);
-
-    await new Promise(r => setTimeout(r, 500));
-
-    try {
-        const canvas = await html2canvas(document.getElementById('resultPage'), {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: null, 
-            logging: false,
-            width: 480, 
-            windowWidth: 480
-        });
-
-        const link = document.createElement('a');
-        link.download = `SoulAudit_2025_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-    } catch (err) {
-        console.error(err);
-        alert('截图失败');
-    } finally {
-        container.classList.remove('capture-mode');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
 }
 
 // ========== 兑换码功能 ==========
