@@ -1,4 +1,4 @@
-// 完整的 40 个问题 (保持不变)
+// 完整的 40 个问题
 const questions = [
     "今年你做了什么以前从未做过的事？",
     "你去年定的目标今年完成了吗？",
@@ -54,12 +54,22 @@ const pages = {
     submit: document.getElementById('submitPage'),
     result: document.getElementById('resultPage')
 };
+const redeemModal = document.getElementById('redeemModal');
+const redeemInput = document.getElementById('redeemInput');
+const redeemError = document.getElementById('redeemError');
 
 // 按钮事件
-document.getElementById('startBtn').onclick = () => showPage('quiz');
+document.getElementById('startBtn').onclick = showRedeemModal; // 修改：点击开始时显示弹窗
 document.getElementById('nextBtn').onclick = handleNext;
 document.getElementById('prevBtn').onclick = handlePrev;
 document.getElementById('submitBtn').onclick = generateReport; 
+document.getElementById('saveImageBtn').onclick = saveAsImage;
+document.getElementById('redeemConfirmBtn').onclick = handleRedeem;
+redeemModal.onclick = (e) => { // 点击遮罩层关闭
+    if (e.target === redeemModal) {
+        hideRedeemModal();
+    }
+};
 
 // 输入框相关
 const answerInput = document.getElementById('answerInput');
@@ -114,7 +124,7 @@ function handlePrev() {
     }
 }
 
-// ========== 核心：生成报告 (优化版) ==========
+// ========== 核心：生成报告 ==========
 async function generateReport() {
     const btn = document.getElementById('submitBtn');
     const loadingRing = document.querySelector('.loading-ring');
@@ -126,9 +136,8 @@ async function generateReport() {
     document.getElementById('loadingTitle').innerText = '导师正在分析...';
     document.getElementById('loadingText').innerText = '正在链接你的潜意识数据库';
 
-    // ⚠️ 安全警告：为了演示功能暂时保留，请务必在 DeepSeek 后台重新生成 Key 并在测试后删除
-    // 真正的生产环境请不要把 Key 放在这里！
-    const apiKey = 'sk-1f8a3262abf74e508abc3dc6880face0'; 
+    // ⚠️ 请确认这里是你的 API KEY
+    const apiKey = 'sk-518278d9b6104a8c9fc1fe5f9718f911'; 
     
     // 构建 Prompt
     const prompt = `
@@ -136,16 +145,16 @@ async function generateReport() {
     请根据用户对 ${questions.length} 个问题的回答，生成一份《2025 灵魂复盘报告》。
     
     用户回答：
-    ${questions.map((q, i) => `${i+1}. ${q} 答：${answers[i] || '（沉默）'}`).join('\n')}
+    ${questions.map((q, i) => `${i+1}. ${q} 答：${answers[i] || '无'}`).join('\n')}
 
-    请严格按照以下格式返回（不要使用Markdown代码块，不要加粗标题）：
+    请严格按照以下格式返回（不要Markdown代码块，直接纯文本）：
     
     💀毒舌诊断
     (这里写一段200字左右的刻薄但好笑的评价，指出用户的自欺欺人)
     
     📊关键指标
     搞钱能力：★★☆☆☆ 赚得不少，但花得更多，典型的过路财神。
-    恋爱脑：★★★★☆ 别人撞南墙回头，你把墙拆了继续走。
+    情感状态：★★★★☆ 别人撞南墙回头，你把墙拆了继续走。
     精神状态：★☆☆☆☆ 表面稳如老狗，内心慌得一批。
     
     ❤️回血时刻
@@ -159,40 +168,33 @@ async function generateReport() {
     `;
 
     try {
-        const response = await fetch('/api/proxy', {
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                prompt: prompt
+                model: 'deepseek-reasoner',
+                messages: [
+                    {role: 'system', content: '你是一个犀利、幽默、排版精美的AI助手。'},
+                    {role: 'user', content: prompt}
+                ],
+                temperature: 0.8
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
-        }
-
         const data = await response.json();
-        let content = data.choices[0].message.content;
+        const content = data.choices[0].message.content;
         
-        console.log("Raw AI Response:", content); // 用于调试
-
-        // 1. 预处理：去除可能的 Markdown 代码块标记 (```)
-        content = content.replace(/```json|```/g, '').trim();
-
         renderPaperReport(content);
-        // 【插入这一行】等待自动转图片完成
-        await autoConvertHtmlToImage();
         showPage('result');
 
     } catch (error) {
         console.error(error);
-        alert('生成失败：' + error.message);
+        alert('生成失败，请检查 API Key 或网络');
         preSubmitActions.style.display = 'block'; // 恢复按钮
         loadingRing.style.display = 'none';
-        document.getElementById('loadingTitle').innerText = '出错了';
-        document.getElementById('loadingText').innerText = '请检查网络或重试';
     }
 }
 
@@ -251,6 +253,7 @@ function renderPaperReport(text) {
 
     // 插入关键词和箴言
     if (sections.keyword) {
+        // 1. 关键词盒子
         paper.innerHTML += `
             <div class="keyword-box">
                 <div style="font-size:12px; letter-spacing:2px; color:#888; margin-bottom:5px;">2025 KEYWORD</div>
@@ -258,6 +261,7 @@ function renderPaperReport(text) {
             </div>
         `;
 
+        // 2. 年度箴言 (放在盒子下方，已去掉双引号)
         if (sections.motto) {
             paper.innerHTML += `
                 <div class="keyword-motto">
@@ -273,7 +277,7 @@ function renderPaperReport(text) {
         <div class="paper-footer">
             <div class="stamp">已审阅<br>PASS</div>
             <div class="date-sign">
-                Review time<br>
+                DeepSeek Lab<br>
                 ${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()}
             </div>
         </div>
@@ -282,54 +286,40 @@ function renderPaperReport(text) {
     container.appendChild(paper);
 }
 
-// 优化的解析器：使用正则，容错率更高
+// 简单的文本解析器
 function parseAIResponse(text) {
-    // 定义一个辅助函数，用来提取两个标题之间的内容
-    // 允许标题前后有 ** 或 ##，也允许标题后面有换行符
-    const extract = (startHeader, endHeader) => {
-        // 转义正则特殊字符
-        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        // 构造正则：匹配 startHeader (可能包含**) 到 endHeader (或文本结束)
-        // [\s\S]*? 表示匹配中间所有字符（包括换行），非贪婪模式
-        let pattern;
-        if (endHeader) {
-            pattern = new RegExp(`(?:\\*\\*|##)?${escapeRegExp(startHeader)}(?:\\*\\*|##)?[:：]?\\s*([\\s\\S]*?)(?=(?:\\*\\*|##)?${escapeRegExp(endHeader)})`, 'i');
-        } else {
-            // 如果没有结束标题，直接匹配到最后
-            pattern = new RegExp(`(?:\\*\\*|##)?${escapeRegExp(startHeader)}(?:\\*\\*|##)?[:：]?\\s*([\\s\\S]*)`, 'i');
-        }
-
-        const match = text.match(pattern);
-        return match ? match[1].trim() : '';
+    const getSection = (startMarker, endMarkers) => {
+        const start = text.indexOf(startMarker);
+        if (start === -1) return '';
+        let end = text.length;
+        endMarkers.forEach(m => {
+            const idx = text.indexOf(m);
+            if (idx > start && idx < end) end = idx;
+        });
+        return text.substring(start + startMarker.length, end).trim();
     };
 
-    // 依次提取
-    const toxic = extract('💀毒舌诊断', '📊关键指标');
-    const metrics = extract('📊关键指标', '❤️回血时刻');
-    const warm = extract('❤️回血时刻', '🔮年度关键词');
-    const keyword = extract('🔮年度关键词', '💬年度箴言');
-    const motto = extract('💬年度箴言', null); // 最后一个
-
-    return { toxic, metrics, warm, keyword, motto };
+    return {
+        toxic: getSection('💀毒舌诊断', ['📊关键指标', '❤️回血时刻', '🔮年度关键词', '💬年度箴言']),
+        metrics: getSection('📊关键指标', ['❤️回血时刻', '🔮年度关键词', '💬年度箴言']),
+        warm: getSection('❤️回血时刻', ['🔮年度关键词', '💬年度箴言']),
+        keyword: getSection('🔮年度关键词', ['💬年度箴言']),
+        motto: getSection('💬年度箴言', [])
+    };
 }
 
-// 格式化评分（保持逻辑，增加一点点容错）
+// 格式化评分
 function formatMetrics(text) {
     return text.split('\n').filter(line => line.trim()).map(line => {
-        // 兼容中文冒号和英文冒号
         const parts = line.split(/[:：]/);
         if (parts.length < 2) return '';
         
-        // 清理 Label 中的 markdown 符号
-        const label = parts[0].replace(/[*#\-]/g, '').trim();
+        const label = parts[0].trim();
         const rest = parts.slice(1).join('：').trim();
         
-        // 提取星星
         const starMatch = rest.match(/[★☆]+/);
         const stars = starMatch ? starMatch[0] : '★★★☆☆';
         
-        // 提取点评
         let comment = rest.replace(stars, '').trim();
         comment = comment.replace(/^[\(（\[【]|[\)）\]】]$/g, '')
                          .replace(/^点评[:：]?/, '')
@@ -349,83 +339,94 @@ function formatMetrics(text) {
     }).join('');
 }
 
-// ========== 修复版：自动截图 (防 iOS 丢失对象 + 自动降级) ==========
-async function autoConvertHtmlToImage() {
-    // 1. 获取源内容
-    const source = document.querySelector('.report-paper');
-    const container = document.getElementById('reportContent');
+// ========== 截图功能 ==========
+async function saveAsImage() {
+    const btn = document.getElementById('saveImageBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '生成中...';
+    btn.disabled = true;
 
-    if (!source || !container) return; // 如果找不到，直接放弃，显示原网页
-    
-    document.getElementById('loadingText').innerText = '正在生成报告卡片...';
+    container.classList.add('capture-mode');
+    window.scrollTo(0, 0);
 
-    // 2. 创建摄影棚 (关键修改：不再移出屏幕，而是放在底层)
-    const wrapper = document.createElement('div');
-    Object.assign(wrapper.style, {
-        position: 'fixed',
-        top: '0', 
-        left: '0',      // 【关键】留在屏幕内
-        width: '480px', // 锁定宽度
-        height: 'auto',
-        zIndex: '-9999', // 【关键】藏在最底下
-        background: '#F3F1E9',
-        overflow: 'hidden',
-        visibility: 'visible' // 【关键】必须可见，否则 iOS 不渲染
-    });
-
-    // 3. 克隆报告
-    const clone = source.cloneNode(true);
-    Object.assign(clone.style, {
-        width: '100%',
-        margin: '0',
-        boxShadow: 'none',
-        transform: 'none'
-    });
-    wrapper.appendChild(clone);
-    document.body.appendChild(wrapper);
-
-    // 给 iOS 一点反应时间
     await new Promise(r => setTimeout(r, 500));
 
     try {
-        // 4. 尝试截图
-        const canvas = await html2canvas(wrapper, {
-            scale: 2, 
+        const canvas = await html2canvas(document.getElementById('resultPage'), {
+            scale: 2,
             useCORS: true,
-            allowTaint: false,
-            backgroundColor: '#F3F1E9',
+            backgroundColor: null, 
             logging: false,
-            width: 480,
+            width: 480, 
             windowWidth: 480
         });
 
-        // 5. 成功：替换为图片
-        const imgData = canvas.toDataURL('image/png');
-        container.innerHTML = `
-            <div class="final-image-container" style="animation: fadeIn 0.5s ease;">
-                <img src="${imgData}" alt="2025灵魂复盘报告" class="generated-report-img">
-                <div class="save-hint">👆 长按上方图片保存到相册</div>
-            </div>
-        `;
+        const link = document.createElement('a');
+        link.download = `SoulAudit_2025_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
 
-    } catch (error) {
-        console.warn("自动转图片失败，已降级为 HTML 显示:", error);
-        // 【关键】这里不再弹窗报错，而是默默失败
-        // 失败后，container 里依然是 renderPaperReport 渲染好的 HTML
-        // 我们只加一个提示，告诉用户可以手动截图
-        const hint = document.createElement('div');
-        hint.className = 'save-hint';
-        hint.style.textAlign = 'center';
-        hint.style.marginTop = '20px';
-        hint.innerHTML = '⚠️ 自动生成卡片失败，请直接<b>截图</b>保存';
-        container.appendChild(hint);
-        
+    } catch (err) {
+        console.error(err);
+        alert('截图失败');
     } finally {
-        // 6. 无论成功失败，都要清理垃圾
-        if (document.body.contains(wrapper)) {
-            document.body.removeChild(wrapper);
-        }
+        container.classList.remove('capture-mode');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
+// ========== 兑换码功能 ==========
+// 警告：此方法仅用于本地测试，直接暴露了兑换码。
+// 线上部署请务必使用后端API验证方案（如Vercel Serverless Functions）。
+const VALID_CODES = new Set([
+    '11112222', 
+    '88888888', // 你的测试码
+    'A1B2C3D4'  // 也可以是字母数字组合
+]);
+
+function showRedeemModal() {
+    redeemModal.classList.add('active');
+    redeemInput.focus();
+}
+
+function hideRedeemModal() {
+    redeemModal.classList.remove('active');
+    redeemInput.value = ''; // 清空输入
+    redeemError.style.display = 'none'; // 隐藏错误提示
+}
+
+function handleRedeem() {
+    const code = redeemInput.value.trim().toUpperCase(); // 获取并转为大写
+    
+    if (code.length === 0) {
+        showError("请输入兑换码");
+        return;
+    }
+
+    // 核心验证逻辑
+    if (VALID_CODES.has(code)) {
+        // 验证成功
+        // alert('兑换成功！'); // 已移除成功提示
+        hideRedeemModal();
+        showPage('quiz'); // 进入问卷页面
+    } else {
+        // 验证失败
+        showError("兑换码无效或已被使用");
+    }
+}
+function showError(message) {
+    redeemError.textContent = message;
+    redeemError.style.display = 'block';
+    // 添加一个简单的震动效果
+    redeemModal.querySelector('.modal-content').animate([
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-10px)' },
+        { transform: 'translateX(10px)' },
+        { transform: 'translateX(0)' }
+    ], {
+        duration: 300,
+        easing: 'ease-in-out'
+    });
+}
 init();
